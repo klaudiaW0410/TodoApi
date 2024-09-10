@@ -4,6 +4,8 @@ using TodoApi.Models;
 using MongoDB.Driver;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace TodoApi.Services
 {
@@ -13,19 +15,21 @@ namespace TodoApi.Services
 
     public ToDoService(IOptions<MongoSettings> mongoSettings)
     {
-      // Retrieves the connection string to MongoDB from the configuration
-      var mongoClient = new MongoClient(config.GetConnectionString("ConnectionString"));
+      var settings = mongoSettings.Value;
 
-      //Retrieves the database name from the configuration and obtains the MongoDB database
-      var mongoDatabase = mongoClient.GetDatabase("DatabaseName");
+      // Retrieves the connection string to MongoDB from the settings
+      var mongoClient = new MongoClient(settings.ConnectionString);
+
+      // Retrieves the database name from the settings and obtains the MongoDB database
+      var mongoDatabase = mongoClient.GetDatabase(settings.Database);
 
       // Retrieves ToDoItem document collection from database
       _toDoItems = mongoDatabase.GetCollection<ToDoItem>("ToDoItems");
     }
 
-
     public async Task<List<ToDoItem>> GetAsync() =>
-    await _toDoItems.Find(item => true).ToListAsync();
+        await _toDoItems.Find(item => true).ToListAsync();
+
     public async Task<ToDoItem> GetAsync(string id) =>
         await _toDoItems.Find<ToDoItem>(item => item.Id == id).FirstOrDefaultAsync();
 
@@ -37,10 +41,11 @@ namespace TodoApi.Services
 
     public async Task UpdateAsync(string id, ToDoItem updateToDo) =>
         await _toDoItems.ReplaceOneAsync(item => item.Id == id, updateToDo);
+
     public async Task RemoveAsync(string id) =>
         await _toDoItems.DeleteOneAsync(item => item.Id == id);
-    public async Task RemoveAsync(ToDoItem oldToDo) =>
-       await _toDoItems.DeleteOneAsync(item => item.Id == oldToDo.Id);
 
+    public async Task RemoveAsync(ToDoItem oldToDo) =>
+        await _toDoItems.DeleteOneAsync(item => item.Id == oldToDo.Id);
   }
 }

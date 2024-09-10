@@ -1,7 +1,26 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using TodoApi.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoConnection"));
+builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoSettings"));
+
+// Register ToDoService
+builder.Services.AddSingleton<ToDoService>();
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+  options.AddDefaultPolicy(builder =>
+  {
+    builder.WithOrigins("http://localhost:5175") // Adres frontendowy
+             .AllowAnyHeader()
+             .AllowAnyMethod();
+  });
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -18,6 +37,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Ensure CORS is used
+app.UseCors();
 
 app.UseAuthorization();
 
